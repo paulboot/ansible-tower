@@ -1,0 +1,37 @@
+delete service dhcp-server shared-network-name LAN
+set service dhcp-server shared-network-name LAN authoritative enable
+set service dhcp-server shared-network-name LAN subnet 192.168.3.0/24 client-prefix-length 24
+set service dhcp-server shared-network-name LAN subnet 192.168.3.0/24 default-router 192.168.3.1
+set service dhcp-server shared-network-name LAN subnet 192.168.3.0/24 dns-server 192.168.3.1
+set service dhcp-server shared-network-name LAN subnet 192.168.3.0/24 domain-name bocuse.nl
+set service dhcp-server shared-network-name LAN subnet 192.168.3.0/24 lease 2419200
+set service dhcp-server shared-network-name LAN subnet 192.168.3.0/24 start 192.168.3.15 stop 192.168.3.245
+{% for device in nb_devices.json.results | sort(attribute='name') %}
+{%   for intf in nb_interfaces.json.results %}
+{%     if intf.device.name == device.name %}
+{%       for address in nb_ips.json.results %}
+{%         if address.status.value == "dhcp" and address.assigned_object.device.name is defined and address.assigned_object.device.name == device.name and address.assigned_object.name == intf.name %}
+{%           if intf.mac_address is not none and address.dns_name != "" %}
+set service dhcp-server shared-network-name LAN subnet {{ address.address | ansible.netcommon.ipaddr('0') }} static-mapping {{ address.dns_name.split(".")[0] | lower }} ip-address {{ address.address | ansible.netcommon.ipaddr('address') }}
+set service dhcp-server shared-network-name LAN subnet {{ address.address | ansible.netcommon.ipaddr('0') }} static-mapping {{ address.dns_name.split(".")[0] | lower }} mac-address {{ intf.mac_address }}
+{%             if address.custom_fields.dhcp_static_mapping_parameters is not none %}
+set service dhcp-server shared-network-name LAN subnet {{ address.address | ansible.netcommon.ipaddr('0') }} static-mapping {{ address.dns_name.split(".")[0] | lower }} static-mapping-parameters "{{ address.custom_fields.dhcp_static_mapping_parameters }}"
+{%             endif %}
+{%           endif %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+{% endfor %}
+
+delete system static-host-mapping
+{% for address in nb_ips.json.results | sort(attribute='dns_name') %}
+{%   if address.dns_name != "" %}
+set system static-host-mapping host-name {{ address.dns_name }} inet {{ address.address | ansible.netcommon.ipaddr('address') }}
+{%     if address.custom_fields.dns_alias is not none %}
+{%       for alias in address.custom_fields.dns_alias.split(";") %}
+set system static-host-mapping host-name {{ address.dns_name }} alias {{ alias }}
+{%       endfor %}
+{%     endif %}
+{%   endif %}
+{% endfor %}

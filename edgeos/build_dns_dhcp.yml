@@ -1,0 +1,76 @@
+---
+- name: Create Report from Netbox Data
+  hosts: device_roles_firewall_nat_router_dns
+  gather_facts: no
+  connection: local
+  tasks:
+    # - debug: var=play_hosts
+    #   run_once: yes
+
+    - name: Read netbox Data
+      include_vars: netbox_data.yml
+      run_once: yes
+
+    - name: Get Interface Data from Netbox
+      uri:
+        url: "{{ netbox_url }}/api/dcim/devices/"
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }}"
+          Accept: 'application/json'
+        return_content: yes
+        body_format: json
+        status_code: [200, 201]
+      register: nb_devices
+      delegate_to: localhost
+      run_once: yes
+
+    - debug: var=nb_devices
+      run_once: yes
+
+    - name: Get Interface Data from Netbox
+      uri:
+        url: "{{ netbox_url }}/api/dcim/interfaces/"
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }}"
+          Accept: 'application/json'
+        return_content: yes
+        body_format: json
+        status_code: [200, 201]
+      register: nb_interfaces
+      delegate_to: localhost
+      run_once: yes
+
+    - debug: var=nb_interfaces
+      run_once: yes
+
+    - name: Get IP Address Data from Netbox
+      uri:
+        url: "{{ netbox_url }}/api/ipam/ip-addresses/"
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }}"
+          Accept: 'application/json'
+        return_content: yes
+        body_format: json
+        status_code: [200, 201]
+      register: nb_ips
+      delegate_to: localhost
+      run_once: yes
+
+    - debug: var=nb_ips
+      run_once: yes
+
+    - name: List all known variables and facts
+      debug:
+        var: hostvars
+
+    - name: Create temporary folder for {{ inventory_hostname }}
+      file:
+        dest: "{{ working_folder }}/{{ inventory_hostname }}"
+        state: directory
+    - name: Create configuration file for {{ inventory_hostname }}
+      template:
+          src: "templates/{{ device_roles[0] }}.j2"
+          dest: "{{ working_folder }}/{{ inventory_hostname }}/{{ inventory_hostname }}.conf"
