@@ -2,6 +2,14 @@
   become: true
   become_user: root
   tasks:
+      - name: List all known hostvars for {{ inventory_hostname }}
+      debug:
+        var: hostvars[inventory_hostname]
+
+    - name: List all available ansible facts for {{ inventory_hostname }}
+      ansible.builtin.debug:
+        var: ansible_facts
+
     - name: Update apt repo and cache on all Debian/Ubuntu boxes
       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
 
