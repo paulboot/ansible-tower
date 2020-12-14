@@ -2,7 +2,12 @@
   become: true
   become_user: root
   gather_facts: false
+  connection: local
   tasks:
+    - name: Execute the command in remote shell; stdout goes to the specified file on the remote.
+      shell: printenv
+      delegate_to: localhost
+  
     - name: List all known hostvars for {{ inventory_hostname }}
       debug:
         var: hostvars[inventory_hostname]
