@@ -2,7 +2,7 @@
   become: true
   become_user: root
   tasks:
-      - name: List all known hostvars for {{ inventory_hostname }}
+    - name: List all known hostvars for {{ inventory_hostname }}
       debug:
         var: hostvars[inventory_hostname]
 
