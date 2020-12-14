@@ -1,6 +1,7 @@
 - hosts: se6
   become: true
   become_user: root
+  gather_facts: false
   tasks:
     - name: List all known hostvars for {{ inventory_hostname }}
       debug:
