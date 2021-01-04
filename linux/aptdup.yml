@@ -1,22 +1,11 @@
-- hosts: se6
+- hosts: device_roles_host
   become: true
   become_user: root
   gather_facts: false
   tasks:
-    - name: Execute the command in remote shell; stdout goes to the specified file on the remote.
-      shell: printenv
-      delegate_to: localhost
-  
-    - name: List all known hostvars for {{ inventory_hostname }}
-      debug:
-        var: hostvars[inventory_hostname]
-
-    - name: List all available ansible facts for {{ inventory_hostname }}
-      ansible.builtin.debug:
-        var: ansible_facts
-
     - name: Update apt repo and cache on all Debian/Ubuntu boxes
       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+      ignore_unreachable: True
 
     - name: Upgrade all packages on servers
       apt: upgrade=dist force_apt_get=yes
@@ -25,7 +14,7 @@
       register: reboot_required_file
       stat: path=/var/run/reboot-required get_md5=no
 
-    - name: Reboot the box if kernel updated
+    - name: Reboot the box if kernel updated and not in group tags_noreboot
       reboot:
         msg: "Reboot initiated by Ansible for kernel updates"
         connect_timeout: 5
@@ -33,4 +22,4 @@
         pre_reboot_delay: 0
         post_reboot_delay: 30
         test_command: uptime
-      when: reboot_required_file.stat.exists
+      when: "reboot_required_file.stat.exists and 'tags_noreboot' not in group_names"
