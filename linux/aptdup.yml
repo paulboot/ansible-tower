@@ -1,8 +1,25 @@
-- hosts: device_roles_host
-  ignore_unreachable: yes
-  become: true
+- name: Play find reable hosts
+  hosts: device_roles_host
+  become: True
   become_user: root
-  gather_facts: false
+  gather_facts: False
+  tasks:
+    - name: Run a block
+      block:
+        - name: Determine if host is reachable
+          wait_for_connection:
+            timeout: 10
+          ignore_unreachable: True
+          ignore_errors: True
+        - name: Create host group for reachable host
+          group_by:
+            key: up_hosts
+
+- name: Output all up systems
+  hosts: up_hosts
+  become: True
+  become_user: root
+  gather_facts: False
   tasks:
     - name: Update apt repo and cache on all Debian/Ubuntu boxes
       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
