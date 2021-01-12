@@ -1,19 +1,18 @@
-- name: Play find reable hosts
+- name: Play find reachable hosts
   hosts: device_roles_host
   become: True
   become_user: root
   gather_facts: False
+  ignore_unreachable: True
   tasks:
-    - name: Run a block
-      block:
-        - name: Determine if host is reachable
-          wait_for_connection:
-            timeout: 10
-          ignore_unreachable: True
-          ignore_errors: True
-        - name: Create host group for reachable host
-          group_by:
-            key: up_hosts
+    - name: Determine if host is reachable
+      wait_for_connection:
+        timeout: 10
+      when: "'tags_active' in group_names"
+    - name: Create host group for reachable host
+      group_by:
+        key: up_hosts
+      when: "'tags_active' in group_names"  
 
 - name: Output all up systems
   hosts: up_hosts
